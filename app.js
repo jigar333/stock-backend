@@ -38,5 +38,5 @@ app.get("/verify", verifyUser, (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log("running", port);
+  console.log("running", port, API_URL);
 });
