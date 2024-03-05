@@ -3,12 +3,13 @@ import cors from "cors";
 import { adminRouter } from "./Routes/AdminRoute.js";
 import Jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+import { API_URL } from "./utils/constant.js";
 const app = express();
 const port = process.env.PORT;
 
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [API_URL],
     methods: ["GET", "POST", "PUT"],
     credentials: true,
   })
