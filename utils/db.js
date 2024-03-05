@@ -1,3 +1,5 @@
+import pg from "pg";
+const { Client } = pg;
 import mysql from "mysql";
 
 const con = mysql.createConnection({
