@@ -38,7 +38,7 @@ router.post("/add_design", (req, res) => {
 });
 
 router.get("/design", (req, res) => {
-  const sql = "SELECT * FROM DESIGN_MASTER";
+  const sql = "SELECT * FROM design_master";
   con.query(sql, (err, result) => {
     if (err) return res.json({ Status: false, Error: "Query error" });
     return res.json({ Status: true, Result: result });
