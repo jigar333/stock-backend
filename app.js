@@ -3,13 +3,12 @@ import cors from "cors";
 import { adminRouter } from "./Routes/AdminRoute.js";
 import Jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
-import { API_URL } from "./utils/constant.js";
 const app = express();
 const port = process.env.PORT;
-
+const api_url = process.env.API_URL;
 app.use(
   cors({
-    origin: [API_URL],
+    origin: [api_url],
     methods: ["GET", "POST", "PUT"],
     credentials: true,
   })
@@ -38,5 +37,5 @@ app.get("/verify", verifyUser, (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log("running", port, API_URL);
+  console.log("running", port, api_url);
 });
