@@ -11,7 +11,6 @@ mysqlConfig = {
 
 const con = mysql.createConnection(mysqlConfig);
 con.connect(function (err) {
-  console.log(mysqlConfig);
   if (err) {
     console.log("Connection error!");
   } else {

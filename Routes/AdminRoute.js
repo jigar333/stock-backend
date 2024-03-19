@@ -70,11 +70,11 @@ router.get("/purchasedstock", (req, res) => {
   });
 });
 
-router.get("/purchasedstock/:designNumber", (req, res) => {
-  const { designNumber } = req.params;
+router.get("/purchasedstock/:id", (req, res) => {
+  const { id } = req.params;
   const sql =
-    "SELECT d.design_number, s.box, s.date FROM stock_master AS s LEFT JOIN design_master AS d ON d.id = s.design_number WHERE s.sell = 0 AND d.design_number = ?  ORDER BY date";
-  con.query(sql, [designNumber], (err, result) => {
+    "SELECT d.design_number, s.box, s.date FROM stock_master AS s LEFT JOIN design_master AS d ON d.id = s.design_number WHERE s.sell = 0 AND d.id = ?  ORDER BY date";
+  con.query(sql, [id], (err, result) => {
     if (err) return res.json({ Status: false, Error: "Query error" });
     return res.json({ Status: true, Result: result });
   });
@@ -89,11 +89,11 @@ router.get("/soldstock", (req, res) => {
   });
 });
 
-router.get("/soldstock/:designNumber", (req, res) => {
-  const { designNumber } = req.params;
+router.get("/soldstock/:id", (req, res) => {
+  const { id } = req.params;
   const sql =
-    "SELECT d.design_number, s.box, s.date FROM stock_master AS s LEFT JOIN design_master AS d ON d.id = s.design_number WHERE s.sell = 1 AND d.design_number = ?  ORDER BY date";
-  con.query(sql, [designNumber], (err, result) => {
+    "SELECT d.design_number, s.box, s.date FROM stock_master AS s LEFT JOIN design_master AS d ON d.id = s.design_number WHERE s.sell = 1 AND d.id = ?  ORDER BY date";
+  con.query(sql, [id], (err, result) => {
     if (err) return res.json({ Status: false, Error: "Query error" });
     return res.json({ Status: true, Result: result });
   });
@@ -101,8 +101,18 @@ router.get("/soldstock/:designNumber", (req, res) => {
 
 router.get("/totalstock", (req, res) => {
   const sql =
-    "SELECT d.design_number,SUM(CASE WHEN sell = 0 THEN box ELSE -box END) AS remaining_stock FROM stock_master AS s LEFT JOIN design_master AS d  ON d.id = s.design_number GROUP BY d.id";
+    "SELECT d.id,d.design_number,SUM(CASE WHEN sell = 0 THEN box ELSE -box END) AS remaining_stock FROM stock_master AS s LEFT JOIN design_master AS d  ON d.id = s.design_number GROUP BY d.id";
   con.query(sql, (err, result) => {
+    if (err) return res.json({ Status: false, Error: "Query error" });
+    return res.json({ Status: true, Result: result });
+  });
+});
+
+router.get("/totalstock/:id", (req, res) => {
+  const { id } = req.params;
+  const sql =
+    "(SELECT s.sell, d.design_number, s.box, s.date FROM stock_master AS s LEFT JOIN design_master AS d ON d.id = s.design_number WHERE s.sell = 0 AND d.id = ?  ORDER BY DATE) UNION (SELECT s.sell, d.design_number, s.box, s.date FROM stock_master AS s LEFT JOIN design_master AS d ON d.id = s.design_number WHERE s.sell = 1 AND d.id = ?  ORDER BY DATE)";
+  con.query(sql, [id, id], (err, result) => {
     if (err) return res.json({ Status: false, Error: "Query error" });
     return res.json({ Status: true, Result: result });
   });
