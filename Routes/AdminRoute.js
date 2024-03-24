@@ -2,24 +2,99 @@ import express from "express";
 import con from "../utils/db.js";
 import jwt from "jsonwebtoken";
 const router = express.Router();
+import bcrypt from "bcryptjs";
 
-router.post("/adminlogin", (req, res) => {
-  const sql = "SELECT * FROM admin where email = ? and password = ?";
-  con.query(sql, [req.body.email, req.body.password], (err, result) => {
-    if (err) return res.json({ loginStatus: false, Error: "Query error" });
-    if (result.length > 0) {
-      const email = result[0].email;
-      const token = jwt.sign(
-        { role: "admin", email: email },
-        "jwt_secrete_key_my",
-        {
-          expiresIn: "1d",
+router.post("/signup", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const existingUserQuery = "SELECT * FROM admin WHERE email = ?";
+    con.query(existingUserQuery, [email], async (err, existingUser) => {
+      if (err) {
+        console.error("Error checking existing user:", err);
+        return res
+          .status(500)
+          .json({ signupStatus: false, error: "Internal server error" });
+      }
+
+      if (existingUser.length > 0) {
+        return res
+          .status(400)
+          .json({ signupStatus: false, error: "User already exists" });
+      }
+
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10); // 10 is the salt rounds
+
+      // Insert the new user into the database
+      const insertUserQuery =
+        "INSERT INTO admin (email, password) VALUES (?, ?)";
+      con.query(
+        insertUserQuery,
+        [email, hashedPassword],
+        (insertErr, result) => {
+          if (insertErr) {
+            console.error("Error inserting new user:", insertErr);
+            return res
+              .status(500)
+              .json({ signupStatus: false, error: "Internal server error" });
+          }
+
+          // Generate JWT token for the new user
+          const token = jwt.sign({ email }, "your_jwt_secret", {
+            expiresIn: "1d",
+          });
+
+          res.cookie("token", token);
+          res.json({ signupStatus: true });
         }
       );
-      res.cookie("token", token);
-      return res.json({ loginStatus: true });
+    });
+  } catch (error) {
+    console.error("Error during signup:", error);
+    res
+      .status(500)
+      .json({ signupStatus: false, error: "Internal server error" });
+  }
+});
+
+router.post("/adminlogin", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  // Modify the SQL query to select the user by email
+  const sql = "SELECT * FROM admin WHERE email = ?";
+  con.query(sql, [email], (err, result) => {
+    if (err) return res.json({ loginStatus: false, Error: "Query error" });
+    if (result.length > 0) {
+      // Compare the hashed password with the hashed password stored in the database
+      bcrypt.compare(
+        password,
+        result[0].password,
+        (bcryptErr, bcryptResult) => {
+          if (bcryptErr) {
+            return res.json({
+              loginStatus: false,
+              Error: "Hash comparison error",
+            });
+          }
+          if (bcryptResult) {
+            const token = jwt.sign(
+              { role: "admin", email: email },
+              "jwt_secrete_key_my",
+              { expiresIn: "1d" }
+            );
+            res.cookie("token", token);
+            return res.json({ loginStatus: true });
+          } else {
+            return res.json({
+              loginStatus: false,
+              Error: "Wrong credentials!",
+            });
+          }
+        }
+      );
     } else {
-      return res.json({ loginStatus: false, Error: "Wrong credentials!" });
+      return res.json({ loginStatus: false, Error: "User not found" });
     }
   });
 });
